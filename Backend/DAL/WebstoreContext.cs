@@ -28,42 +28,50 @@ namespace DAL
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.ProductGroup)
                 .WithMany(pg => pg.Products)
-                .HasForeignKey(p => p.GroupID);
+                .HasForeignKey(p => p.GroupID)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ProductGroup>()
                 .HasOne(pg => pg.ParentGroup)
-                .WithMany()
-                .HasForeignKey(pg => pg.ParentID);
+                .WithMany(pg =>pg.Children)
+                .HasForeignKey(pg => pg.ParentID)
+                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.UserGroup)
-                .WithMany()
-                .HasForeignKey(u => u.GroupID);
+                .WithMany(ug=> ug.Users)
+                .HasForeignKey(u => u.GroupID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<BasketPosition>()
                 .HasOne(bp => bp.Product)
-                .WithMany()
-                .HasForeignKey(bp => bp.ProductID);
+                .WithMany(p=>p.BasketPositions)
+                .HasForeignKey(bp => bp.ProductID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<BasketPosition>()
                 .HasOne(bp => bp.User)
-                .WithMany()
-                .HasForeignKey(bp => bp.UserID);
+                .WithMany(u=>u.BasketPosition)
+                .HasForeignKey(bp => bp.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.User)
-                .WithMany()
-                .HasForeignKey(o => o.UserID);
+                .WithMany(u=>u.Orders)
+                .HasForeignKey(o => o.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<OrderPosition>()
                 .HasOne(op => op.Order)
-                .WithMany()
-                .HasForeignKey(op => op.OrderID);
+                .WithMany(o=>o.OrderPositions)
+                .HasForeignKey(op => op.OrderID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<OrderPosition>()
                 .HasOne(op => op.Product)
-                .WithMany()
-                .HasForeignKey(op => op.ProductID);
+                .WithMany(o=>o.OrderPositions)
+                .HasForeignKey(op => op.ProductID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

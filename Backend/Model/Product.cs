@@ -9,6 +9,8 @@
         public bool IsActive { get; set; }
         public int GroupID { get; set; }
         public ProductGroup? ProductGroup { get; set; }
+        public List<OrderPosition> OrderPositions { get; set; }
+        public List<BasketPosition > BasketPositions { get; set; }
     }
 
 }

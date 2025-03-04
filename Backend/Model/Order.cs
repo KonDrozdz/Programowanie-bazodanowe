@@ -6,6 +6,7 @@
         public int UserID { get; set; }
         public User? User { get; set; }
         public DateTime Date { get; set; }
+        public List<OrderPosition> OrderPositions { get; set; }
     }
 
 }

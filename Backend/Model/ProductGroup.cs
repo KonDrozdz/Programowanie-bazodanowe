@@ -6,6 +6,7 @@
         public string Name { get; set; } = string.Empty;
         public int? ParentID { get; set; }
         public ProductGroup? ParentGroup { get; set; }
+        public List<ProductGroup> Children { get; set; }
         public List<Product> Products { get; set; } = new();
     }
 
