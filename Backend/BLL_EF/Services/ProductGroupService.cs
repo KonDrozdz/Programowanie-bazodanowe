@@ -21,7 +21,6 @@ namespace BLL_EF.Services
             _context = context;
         }
 
-
         public async Task<IEnumerable<ProductGroupResponseDTO>> GetProductGroupsAsync(int? parentId = null, SortOrder sortOrder = SortOrder.NameAscending)
         {
             var query = _context.ProductGroups.AsQueryable();
@@ -30,6 +29,14 @@ namespace BLL_EF.Services
             {
                 query = query.Where(g => g.ParentID == parentId.Value);
             }
+
+      
+            query = sortOrder switch
+            {
+                SortOrder.NameAscending => query.OrderBy(g => g.Name),
+                SortOrder.NameDescending => query.OrderByDescending(g => g.Name),
+                _ => query 
+            };
 
             var result = await query.Select(g => new ProductGroupResponseDTO
             {
