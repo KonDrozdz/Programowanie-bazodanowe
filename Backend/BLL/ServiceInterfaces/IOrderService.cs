@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BLL.DTOModels;
+using BLL.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +8,17 @@ using System.Threading.Tasks;
 
 namespace BLL.ServiceInterfaces
 {
-    internal interface IOrderService
+    public interface IOrderService
     {
+
+        Task<OrderResponseDTO> GenerateOrderAsync(int userId);
+
+        Task PayForOrderAsync(int orderId, decimal amountPaid);
+        Task<IEnumerable<OrderResponseDTO>> GetOrdersAsync(
+            int? orderId = null,
+            bool? isPaid = null,
+            SortOrder sortOrder = SortOrder.DateAscending
+        );
+        Task<IEnumerable<OrderPositionResponseDTO>> GetOrderPositionsAsync(int orderId);
     }
 }

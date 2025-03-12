@@ -6,7 +6,16 @@ using System.Threading.Tasks;
 
 namespace BLL.DTOModels
 {
-    internal class ProductGrupDTO
+    public record ProductGroupRequestDTO
     {
+        public string Name { get; init; }
+        public int? ParentId { get; init; }
     }
+    public record ProductGroupResponseDTO
+    {
+        public int Id { get; init; }
+        public string Name { get; init; }
+        public int? ParentId { get; init; }
+    }
+
 }
