@@ -10,7 +10,7 @@ namespace BLL.DTOModels
     {
         public string Name { get; init; }
         public double Price { get; init; }
-        public int? GroupId { get; init; }
+        public int GroupId { get; init; }
     }
 
     public record ProductResponseDTO

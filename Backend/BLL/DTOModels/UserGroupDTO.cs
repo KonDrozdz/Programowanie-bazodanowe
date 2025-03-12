@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace BLL.DTOModels
 {
-    internal class UserGroupDTO
+    public record UserGroupRequestDTO
     {
+        public string Name { get; init; }
+    }
+    public record UserGroupResponseDTO
+    {
+        public int Id { get; init; }
+        public string Name { get; init; }
     }
 }

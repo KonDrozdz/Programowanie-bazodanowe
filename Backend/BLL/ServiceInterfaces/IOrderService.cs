@@ -13,7 +13,7 @@ namespace BLL.ServiceInterfaces
 
         Task<OrderResponseDTO> GenerateOrderAsync(int userId);
 
-        Task PayForOrderAsync(int orderId, decimal amountPaid);
+        Task PayForOrderAsync(int orderId, double amountPaid);
         Task<IEnumerable<OrderResponseDTO>> GetOrdersAsync(
             int? orderId = null,
             bool? isPaid = null,
