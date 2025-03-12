@@ -89,7 +89,7 @@ namespace BLL_EF.Services
 
             while (currentGroup != null)
             {
-                groupNames.Insert(0, currentGroup.Name);
+                groupNames.Add(currentGroup.Name);
 
                 currentGroup = await _context.ProductGroups
                     .Include(pg => pg.ParentGroup)
