@@ -13,6 +13,7 @@ namespace BLL_EF.Services
     public class UserService : IUserService
     {
         private readonly WebstoreContext _context;
+        static bool logged =true;
 
         public UserService(WebstoreContext context)
         {
@@ -27,6 +28,7 @@ namespace BLL_EF.Services
 
             if (user == null)
                 throw new UnauthorizedAccessException("Invalid login or password");
+            logged = true;
 
             return new UserResponseDTO
             {
@@ -37,6 +39,7 @@ namespace BLL_EF.Services
 
         public async Task LogoutAsync()
         {
+            logged = false;
 
 
             await Task.CompletedTask;

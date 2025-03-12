@@ -13,6 +13,8 @@ namespace BLL.Enums
         PriceAscending,
         PriceDescending,
         DateAscending,
-        DateDescending
+        DateDescending,
+        IsPaidAscending,
+        IsPaidDescending,
     }
 }

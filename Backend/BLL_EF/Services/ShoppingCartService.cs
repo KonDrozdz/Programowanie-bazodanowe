@@ -97,7 +97,6 @@ namespace BLL_EF.Services
             if (basketPosition == null)
                 throw new ArgumentException("Product not found in basket");
 
-
             _context.BasketPositions.Remove(basketPosition);
             await _context.SaveChangesAsync();
         }

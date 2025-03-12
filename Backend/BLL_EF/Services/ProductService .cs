@@ -51,7 +51,8 @@ namespace BLL_EF.Services
                 query = query.Where(p => p.GroupID == groupId.Value);
             }
 
-
+            query = query.Include(p => p.ProductGroup)
+                 .ThenInclude(pg => pg.ParentGroup);
             query = sortOrder switch
             {
                 BLL.Enums.SortOrder.NameAscending => query.OrderBy(p => p.Name),
@@ -66,11 +67,38 @@ namespace BLL_EF.Services
                 Id = p.ID,
                 Name = p.Name,
                 Price = p.Price,
-                GroupName = p.ProductGroup.Name
+                GroupName = GetFullGroupNameAsync(p.ProductGroup.ID).Result
             }).ToListAsync();
 
             return result;
         }
+        private async Task<string> GetFullGroupNameAsync(int productId)
+        {
+            var product = await _context.Products
+                .Include(p => p.ProductGroup) 
+                .ThenInclude(pg => pg.ParentGroup) 
+                .FirstOrDefaultAsync(p => p.ID == productId);
+
+            if (product == null || product.ProductGroup == null)
+            {
+                throw new ArgumentException("Product not found or doesn't have a group.");
+            }
+
+            var groupNames = new List<string>();
+            var currentGroup = product.ProductGroup;
+
+            while (currentGroup != null)
+            {
+                groupNames.Insert(0, currentGroup.Name);
+
+                currentGroup = await _context.ProductGroups
+                    .Include(pg => pg.ParentGroup)
+                    .FirstOrDefaultAsync(pg => pg.ID == currentGroup.ParentID);
+            }
+
+            return string.Join(" / ", groupNames);
+        }
+
 
         public async Task<ProductResponseDTO> AddProductAsync(ProductRequestDTO productRequest)
         {

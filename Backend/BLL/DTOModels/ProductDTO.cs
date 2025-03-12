@@ -20,5 +20,6 @@ namespace BLL.DTOModels
         public double Price { get; init; }
         public string GroupName { get; init; }
         public bool IsActive { get; init; }
+
     }
 }

@@ -41,18 +41,18 @@ namespace BLL_EF.Services
                 Date = DateTime.UtcNow
             };
 
-            _context.Orders.Add(order);
+            await _context.Orders.AddAsync(order);
             await _context.SaveChangesAsync();
 
             var orderPositions = basketPositions.Select(bp => new OrderPosition
             {
-                OrderID = order.ID,
+                Order = order,
                 ProductID = bp.ProductID,
                 Amount = bp.Amount,
                 Price = bp.Product.Price
             }).ToList();
 
-            _context.OrderPositions.AddRange(orderPositions);
+            await _context.OrderPositions.AddRangeAsync(orderPositions);
             _context.BasketPositions.RemoveRange(basketPositions);
             await _context.SaveChangesAsync();
 
@@ -75,7 +75,7 @@ namespace BLL_EF.Services
 
             if (order.OrderPositions.Sum(op => op.Price * op.Amount) > amountPaid)
                 throw new ArgumentException("Insufficient payment");
-
+            order.IsPaid = true;
 
             await _context.SaveChangesAsync();
         }
@@ -87,7 +87,8 @@ namespace BLL_EF.Services
             if (orderId.HasValue)
                 query = query.Where(o => o.ID == orderId.Value);
 
-
+            if (isPaid.HasValue)
+                query = query.Where(o => o.IsPaid == isPaid.Value);
 
             query = sortOrder switch
             {
@@ -95,6 +96,8 @@ namespace BLL_EF.Services
                 SortOrder.DateDescending => query.OrderByDescending(o => o.Date),
                 SortOrder.PriceAscending => query.OrderBy(o => o.OrderPositions.Sum(op => op.Price * op.Amount)),
                 SortOrder.PriceDescending => query.OrderByDescending(o => o.OrderPositions.Sum(op => op.Price * op.Amount)),
+                SortOrder.IsPaidAscending => query.OrderBy(o => o.IsPaid), 
+                SortOrder.IsPaidDescending => query.OrderByDescending(o => o.IsPaid),
                 _ => query
             };
 
@@ -105,7 +108,7 @@ namespace BLL_EF.Services
                 Id = o.ID,
                 Date = o.Date,
                 TotalAmount = o.OrderPositions.Sum(op => op.Price * op.Amount),
-
+                IsPaid = o.IsPaid 
             }).ToList();
         }
 
