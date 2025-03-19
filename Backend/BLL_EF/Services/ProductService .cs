@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Model;
+using SortOrder = BLL.Enums.SortOrder;
 
 namespace BLL_EF.Services
 {
@@ -29,7 +30,10 @@ namespace BLL_EF.Services
             bool onlyActive = true,
             BLL.Enums.SortOrder sortOrder = BLL.Enums.SortOrder.NameAscending)
         {
-            var query = _context.Products.AsQueryable();
+            var query = _context.Products
+                .Include(p => p.ProductGroup)
+                .ThenInclude(pg => pg.ParentGroup)
+                .AsQueryable();
 
             if (onlyActive)
             {
@@ -43,7 +47,20 @@ namespace BLL_EF.Services
 
             if (!string.IsNullOrEmpty(groupName))
             {
-                query = query.Where(p => p.ProductGroup.Name.Contains(groupName));
+                var groupIds = await _context.ProductGroups
+                    .ToListAsync();
+
+                var matchingGroupIds = new List<int>();
+                foreach (var group in groupIds)
+                {
+                    var fullGroupName = await GetFullGroupNameAsync(_context, group.ID);
+                    if (fullGroupName.Contains(groupName))
+                    {
+                        matchingGroupIds.Add(group.ID);
+                    }
+                }
+
+                query = query.Where(p => matchingGroupIds.Contains(p.GroupID.Value));
             }
 
             if (groupId.HasValue)
@@ -51,51 +68,61 @@ namespace BLL_EF.Services
                 query = query.Where(p => p.GroupID == groupId.Value);
             }
 
-            query = query.Include(p => p.ProductGroup)
-                 .ThenInclude(pg => pg.ParentGroup);
             query = sortOrder switch
             {
-                BLL.Enums.SortOrder.NameAscending => query.OrderBy(p => p.Name),
-                BLL.Enums.SortOrder.NameDescending => query.OrderByDescending(p => p.Name),
-                BLL.Enums.SortOrder.PriceAscending => query.OrderBy(p => p.Price),
-                BLL.Enums.SortOrder.PriceDescending => query.OrderByDescending(p => p.Price),
+                SortOrder.NameAscending => query.OrderBy(p => p.Name),
+                SortOrder.NameDescending => query.OrderByDescending(p => p.Name),
+                SortOrder.PriceAscending => query.OrderBy(p => p.Price),
+                SortOrder.PriceDescending => query.OrderByDescending(p => p.Price),
                 _ => query.OrderBy(p => p.Name),
             };
 
-            var result = await query.Select(p => new ProductResponseDTO
-            {
-                Id = p.ID,
-                Name = p.Name,
-                Price = p.Price,
-                GroupName = GetFullGroupNameAsync(p.ProductGroup.ID).Result
-            }).ToListAsync();
+            var products = await query.ToListAsync();
 
-            return result;
+            var productResponseDTOs = new List<ProductResponseDTO>();
+            foreach (var product in products)
+            {
+                var fullGroupName = product.ProductGroup != null
+                    ? await GetFullGroupNameAsync(_context, product.ProductGroup.ID)
+                    : string.Empty;
+
+                productResponseDTOs.Add(new ProductResponseDTO
+                {
+                    Id = product.ID,
+                    Name = product.Name,
+                    Price = product.Price,
+                    GroupName = fullGroupName,
+                    IsActive = product.IsActive
+                });
+            }
+
+            return productResponseDTOs;
         }
-        private async Task<string> GetFullGroupNameAsync(int productId)
-        {
-            var product = await _context.Products
-                .Include(p => p.ProductGroup) 
-                .ThenInclude(pg => pg.ParentGroup) 
-                .FirstOrDefaultAsync(p => p.ID == productId);
 
-            if (product == null || product.ProductGroup == null)
+        private static async Task<string> GetFullGroupNameAsync(WebstoreContext context, int groupId)
+        {
+            var group = await context.ProductGroups
+                .Include(pg => pg.ParentGroup)
+                .FirstOrDefaultAsync(pg => pg.ID == groupId);
+
+            if (group == null)
             {
-                throw new ArgumentException("Product not found or doesn't have a group.");
+                throw new ArgumentException("Group not found.");
             }
 
             var groupNames = new List<string>();
-            var currentGroup = product.ProductGroup;
+            var currentGroup = group;
 
             while (currentGroup != null)
             {
                 groupNames.Add(currentGroup.Name);
 
-                currentGroup = await _context.ProductGroups
+                currentGroup = await context.ProductGroups
                     .Include(pg => pg.ParentGroup)
                     .FirstOrDefaultAsync(pg => pg.ID == currentGroup.ParentID);
             }
 
+            groupNames.Reverse();
             return string.Join(" / ", groupNames);
         }
 

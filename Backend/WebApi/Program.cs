@@ -1,10 +1,13 @@
 
 
+using BLL.ServiceInterfaces;
+using BLL_EF.Services;
 using DAL;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebApi
 {
+
     public class Program
     {
         public static void Main(string[] args)
@@ -13,6 +16,12 @@ namespace WebApi
 
             builder.Services.AddDbContext<WebstoreContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IProductGroupService, ProductGroupService>();
+            builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 
 
             builder.Services.AddControllers();
