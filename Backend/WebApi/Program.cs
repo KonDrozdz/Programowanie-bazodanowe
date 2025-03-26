@@ -1,9 +1,10 @@
 
-
 using BLL.ServiceInterfaces;
-using BLL_EF.Services;
+using BLLDB.Services;
+//using BLLDB_EF.Services;
 using DAL;
 using Microsoft.EntityFrameworkCore;
+using System.Configuration;
 
 namespace WebApi
 {
@@ -16,12 +17,18 @@ namespace WebApi
 
             builder.Services.AddDbContext<WebstoreContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            //builder.Services.AddScoped<IProductService, ProductService>();
+            //builder.Services.AddScoped<IUserService, UserService>();
+            //builder.Services.AddScoped<IOrderService, OrderService>();
+            //builder.Services.AddScoped<IProductGroupService, ProductGroupService>();
+            //builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
+            builder.Services.AddScoped<IProductService>(provider => new ProductService(connectionString));
+            builder.Services.AddScoped<IUserService>(provider => new UserService(connectionString));
+            builder.Services.AddScoped<IOrderService>(provider => new OrderService(connectionString));
+            builder.Services.AddScoped<IProductGroupService>(provider => new ProductGroupService(connectionString));
+            builder.Services.AddScoped<IShoppingCartService>(provider => new ShoppingCartService(connectionString));
 
-            builder.Services.AddScoped<IProductService, ProductService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IOrderService, OrderService>();
-            builder.Services.AddScoped<IProductGroupService, ProductGroupService>();
-            builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 
 
             builder.Services.AddControllers();

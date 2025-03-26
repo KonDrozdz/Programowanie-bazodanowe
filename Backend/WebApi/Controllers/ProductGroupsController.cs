@@ -30,7 +30,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductGroupResponseDTO>> AddProductGroupAsync(ProductGroupRequestDTO groupRequest)
         {
             var productGroup = await _productGroupService.AddProductGroupAsync(groupRequest);
-            return CreatedAtAction(nameof(GetProductGroupsAsync), new { id = productGroup.Id }, productGroup);
+            return Ok(productGroup);
         }
     }
 }

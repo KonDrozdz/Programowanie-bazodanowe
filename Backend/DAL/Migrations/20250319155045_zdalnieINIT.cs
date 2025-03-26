@@ -162,6 +162,22 @@ namespace DAL.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "BasketLog",
+                columns: table => new
+                {
+                    LogID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserID = table.Column<int>(type: "int", nullable: false),
+                    ProductID = table.Column<int>(type: "int", nullable: false),
+                    ActionTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BasketLog", x => x.LogID);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_BasketPositions_UserID",
                 table: "BasketPositions",
@@ -191,6 +207,38 @@ namespace DAL.Migrations
                 name: "IX_Users_GroupID",
                 table: "Users",
                 column: "GroupID");
+
+            // Add triggers
+            migrationBuilder.Sql(@"
+                CREATE TRIGGER BasketDelete
+                ON BasketPositions
+                AFTER DELETE
+                AS
+                BEGIN
+                    INSERT INTO BasketLog (UserID, ProductID, ActionTime, Action)
+                    SELECT d.UserID, d.ProductID, GETDATE(), 'Removed from basket'
+                    FROM DELETED d;
+                END
+            ");
+
+            migrationBuilder.Sql(@"
+                CREATE TRIGGER ProductLinkedToOrdersPreventDelete
+                ON Products
+                INSTEAD OF DELETE
+                AS
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM DELETED d
+                        JOIN OrderPositions op ON op.ProductId = d.ID
+                    )
+                    BEGIN
+                        RAISERROR('Cannot delete product that is linked to orders.', 16, 1);
+                        ROLLBACK TRANSACTION;
+                        RETURN;
+                    END
+                    DELETE FROM Products WHERE ID IN (SELECT ID FROM DELETED);
+                END
+            ");
         }
 
         /// <inheritdoc />
@@ -216,6 +264,13 @@ namespace DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserGroups");
+
+            migrationBuilder.DropTable(
+                name: "BasketLog");
+
+            // Drop triggers
+            migrationBuilder.Sql("DROP TRIGGER BasketDelete");
+            migrationBuilder.Sql("DROP TRIGGER ProductLinkedToOrdersPreventDelete");
         }
     }
 }

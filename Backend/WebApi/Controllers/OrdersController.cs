@@ -37,7 +37,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<OrderResponseDTO>> GenerateOrderAsync(int userId)
         {
             var order = await _orderService.GenerateOrderAsync(userId);
-            return CreatedAtAction(nameof(GetOrdersAsync), new { id = order.Id }, order);
+            return Ok(order);
         }
 
         [HttpPut("pay/{orderId}")]

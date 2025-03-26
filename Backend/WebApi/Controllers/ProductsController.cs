@@ -40,7 +40,7 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductResponseDTO>> AddProductAsync(ProductRequestDTO productRequest)
         {
             var product = await _productService.AddProductAsync(productRequest);
-            return CreatedAtAction(nameof(GetProductsAsync), new { id = product.Id }, product);
+            return Ok(product);
         }
 
         [HttpPut("deactivate/{id}")]
