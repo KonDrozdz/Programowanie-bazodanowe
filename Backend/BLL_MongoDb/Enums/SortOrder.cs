@@ -16,7 +16,5 @@ namespace BLL.Enums
         DateDescending,
         IsPaidAscending,
         IsPaidDescending,
-        AmountAscending,
-        AmountDesc,
     }
 }
