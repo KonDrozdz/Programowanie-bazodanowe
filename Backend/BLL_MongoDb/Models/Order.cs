@@ -27,7 +27,7 @@ namespace BLL_MongoDb.Models
         public string ProductId { get; set; }
 
         public string ProductName { get; set; } 
-        public decimal Price { get; set; }
+        public double Price { get; set; }
         public int Amount { get; set; }
     }
 }

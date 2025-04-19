@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLL.Enums
+namespace BLL_MongoDb.Enums
 {
     public enum SortOrder
     {

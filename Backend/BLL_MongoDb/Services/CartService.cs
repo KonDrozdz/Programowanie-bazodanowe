@@ -2,81 +2,67 @@
 using BLL.DTOModels;
 using BLL_MongoDb.Models;
 using MongoDB.Driver;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace BLL_MongoDb.Services
 {
-    public class CartService : ICartService
+    public class BasketService : IShoppingCartService
     {
-        private readonly IMongoCollection<Cart> _carts;
+        private readonly IMongoCollection<Basket> _baskets;
         private readonly IMongoCollection<Product> _products;
 
-        public CartService(IMongoDatabase db)
+        public BasketService(IMongoDatabase db)
         {
-            _carts = db.GetCollection<Cart>("Carts");
+            _baskets = db.GetCollection<Basket>("Baskets");
             _products = db.GetCollection<Product>("Products");
         }
 
-        public void AddToCart(int userId, int productId, int amount)
+        public async Task AddProductToBasketAsync(int productId, int userId, int amount)
         {
-            // Walidacja produktu
-            if (!_products.Find(p => p.Id == productId.ToString() && p.IsActive).Any())
-                return;
+            
+            var product = await _products.Find(p => p.Id == productId.ToString() && p.IsActive).FirstOrDefaultAsync();
+            if (product == null)
+                throw new KeyNotFoundException("Product not found or inactive");
 
-            var filter = Builders<Cart>.Filter.Eq(c => c.UserId, userId.ToString());
-            var update = Builders<Cart>.Update.Push(c => c.Items, new CartItem
+            var filter = Builders<Basket>.Filter.Eq(b => b.UserId, userId.ToString());
+            var update = Builders<Basket>.Update.Push(b => b.Items, new BasketItem
             {
                 ProductId = productId.ToString(),
-                Amount = amount
+                Amount = amount,
+                AddedAt = DateTime.UtcNow
             });
 
-            _carts.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
+            await _baskets.UpdateOneAsync(filter, update, new UpdateOptions { IsUpsert = true });
         }
 
-        public void RemoveFromCart(int userId, int productId)
+        public async Task UpdateProductQuantityInBasketAsync(int productId, int userId, int newAmount)
         {
-            var filter = Builders<Cart>.Filter.Eq(c => c.UserId, userId.ToString());
-            var update = Builders<Cart>.Update.PullFilter(c => c.Items,
-                i => i.ProductId == productId.ToString());
-
-            _carts.UpdateOne(filter, update);
-        }
-
-        public void UpdateCartItemAmount(int userId, int productId, int newAmount)
-        {
-            var filter = Builders<Cart>.Filter.And(
-                Builders<Cart>.Filter.Eq(c => c.UserId, userId.ToString()),
-                Builders<Cart>.Filter.ElemMatch(c => c.Items, i => i.ProductId == productId.ToString())
+            var filter = Builders<Basket>.Filter.And(
+                Builders<Basket>.Filter.Eq(b => b.UserId, userId.ToString()),
+                Builders<Basket>.Filter.ElemMatch(b => b.Items, i => i.ProductId == productId.ToString())
             );
 
-            var update = Builders<Cart>.Update.Set("Items.$.Amount", newAmount);
-            _carts.UpdateOne(filter, update);
+            var update = Builders<Basket>.Update.Set("Items.$.Amount", newAmount);
+            var result = await _baskets.UpdateOneAsync(filter, update);
+
+            if (result.MatchedCount == 0)
+                throw new KeyNotFoundException("Product not found in basket");
         }
 
-        public CartResponseDTO GetCart(int userId)
+        public async Task RemoveProductFromBasketAsync(int productId, int userId)
         {
-            var cart = _carts.Find(c => c.UserId == userId.ToString()).FirstOrDefault();
-            if (cart == null) return new CartResponseDTO { Items = new List<CartItemResponseDTO>() };
+            var filter = Builders<Basket>.Filter.Eq(b => b.UserId, userId.ToString());
+            var update = Builders<Basket>.Update.PullFilter(b => b.Items,
+                i => i.ProductId == productId.ToString());
 
-            var productIds = cart.Items.Select(i => i.ProductId).ToList();
-            var products = _products.Find(p => productIds.Contains(p.Id))
-                .ToList()
-                .ToDictionary(p => p.Id);
+            var result = await _baskets.UpdateOneAsync(filter, update);
 
-            return new CartResponseDTO
-            {
-                Items = cart.Items.Select(item => new CartItemResponseDTO
-                {
-                    ProductId = int.Parse(item.ProductId),
-                    ProductName = products.TryGetValue(item.ProductId, out var product)
-                        ? product.Name
-                        : "Unknown",
-                    Price = products.TryGetValue(item.ProductId, out var p)
-                        ? p.Price
-                        : 0,
-                    Amount = item.Amount
-                }).ToList()
-            };
+            if (result.MatchedCount == 0)
+                throw new KeyNotFoundException("Basket or product not found");
         }
+
     }
 }

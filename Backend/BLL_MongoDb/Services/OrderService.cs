@@ -30,30 +30,30 @@ namespace BLL_MongoDb.Services
             if (basket == null || !basket.Items.Any())
                 throw new InvalidOperationException("Basket is empty");
 
-            // Pobierz produkty z koszyka
+            
             var productIds = basket.Items.Select(i => i.ProductId).ToList();
             var products = await _products.Find(p => productIds.Contains(p.Id))
                                         .ToListAsync();
             var productDict = products.ToDictionary(p => p.Id);
 
-            // Oblicz całkowitą kwotę
+            
             var totalAmount = basket.Items.Sum(item =>
                 productDict.TryGetValue(item.ProductId, out var product)
                     ? product.Price * item.Amount
                     : 0);
 
-            // Stwórz zamówienie
+            
             var order = new Order
             {
                 UserId = userId.ToString(),
-                OrderDate = DateTime.UtcNow,
+                Date = DateTime.UtcNow,
                 IsPaid = false,
-                TotalAmount = totalAmount,
+                TotalPrice = totalAmount,
                 Items = basket.Items.Select(item => new OrderItem
                 {
                     ProductId = item.ProductId,
                     ProductName = productDict.TryGetValue(item.ProductId, out var p) ? p.Name : "Unknown",
-                    Price = productDict.TryGetValue(item.ProductId, out var prod) ? prod.Price : 0,
+                    Price = (double)(productDict.TryGetValue(item.ProductId, out var prod) ? prod.Price : 0),
                     Amount = item.Amount
                 }).ToList()
             };
@@ -65,8 +65,8 @@ namespace BLL_MongoDb.Services
             {
                 Id = int.Parse(order.Id),
                 UserId = userId,
-                OrderDate = order.OrderDate,
-                TotalAmount = order.TotalAmount,
+                Date = order.Date,
+                TotalAmount = (double)order.TotalPrice,
                 IsPaid = order.IsPaid
             };
         }
@@ -81,9 +81,8 @@ namespace BLL_MongoDb.Services
             {
                 ProductId = int.Parse(item.ProductId),
                 ProductName = item.ProductName,
-                Price = item.Price,
-                Amount = item.Amount,
-                TotalValue = item.Price * item.Amount
+                ProductPrice = item.Price,
+                Amount = item.Amount
             });
         }
 
@@ -117,7 +116,7 @@ namespace BLL_MongoDb.Services
                 Id = int.Parse(o.Id),
                 UserId = int.Parse(o.UserId),
                 Date = o.Date,
-                TotalAmount = o.TotalPrice,
+                TotalAmount = (double)o.TotalPrice,
                 IsPaid = o.IsPaid
             });
         }
@@ -131,11 +130,12 @@ namespace BLL_MongoDb.Services
             if (order.IsPaid)
                 throw new InvalidOperationException("Order is already paid");
 
-            if (amountPaid < order.TotalAmount)
+            if ((decimal)amountPaid < order.TotalPrice) 
                 throw new ArgumentException("Paid amount is less than order total");
 
             var update = Builders<Order>.Update.Set(o => o.IsPaid, true);
             await _orders.UpdateOneAsync(o => o.Id == orderId.ToString(), update);
         }
+
     }
 }

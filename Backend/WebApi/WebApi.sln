@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGenerator", "..\DataGen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLLDB", "..\BLLDB\BLLDB.csproj", "{671FC0AF-2EC6-491E-AF0F-2EA28FAFDEBC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLL_MongoDb", "..\BLL_MongoDb\BLL_MongoDb.csproj", "{A0E49B66-2A11-4DEE-AE34-D9DE50F72EFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,6 +56,10 @@ Global
 		{671FC0AF-2EC6-491E-AF0F-2EA28FAFDEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{671FC0AF-2EC6-491E-AF0F-2EA28FAFDEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{671FC0AF-2EC6-491E-AF0F-2EA28FAFDEBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0E49B66-2A11-4DEE-AE34-D9DE50F72EFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0E49B66-2A11-4DEE-AE34-D9DE50F72EFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0E49B66-2A11-4DEE-AE34-D9DE50F72EFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0E49B66-2A11-4DEE-AE34-D9DE50F72EFE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

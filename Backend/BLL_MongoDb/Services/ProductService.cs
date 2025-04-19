@@ -4,7 +4,9 @@ using BLL_MongoDb.Models;
 using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MongoDB.Bson;
+using BLL.Enums;
 
 namespace BLL_MongoDb.Services
 {
@@ -19,72 +21,94 @@ namespace BLL_MongoDb.Services
             _groups = db.GetCollection<ProductGroup>("ProductGroups");
         }
 
-        public IEnumerable<ProductResponseDTO> GetProducts(
-            string sortBy = "Name",
-            bool ascending = true,
-            string nameFilter = null,
-            string groupNameFilter = null,
-            int? groupIdFilter = null,
-            bool includeInactive = false)
+        public async Task<IEnumerable<ProductResponseDTO>> GetProductsAsync(
+            string? name = null, 
+            string? groupName = null, 
+            int? groupId = null, 
+            bool onlyActive = true,
+            SortOrder sortOrder = SortOrder.NameAscending)
         {
-            // Filtrowanie
+            
             var filterBuilder = Builders<Product>.Filter;
-            var filter = includeInactive
-                ? filterBuilder.Empty
-                : filterBuilder.Eq(p => p.IsActive, true);
+            var filter = onlyActive 
+                ? filterBuilder.Eq(p => p.IsActive, true) 
+                : filterBuilder.Empty;
 
-            if (!string.IsNullOrEmpty(nameFilter))
-                filter &= filterBuilder.Regex(p => p.Name, new BsonRegularExpression(nameFilter, "i"));
+            if (!string.IsNullOrEmpty(name))
+                filter &= filterBuilder.Regex(p => p.Name, new BsonRegularExpression(name, "i"));
 
-            if (groupIdFilter.HasValue)
-                filter &= filterBuilder.Eq(p => p.GroupId, groupIdFilter.Value.ToString());
+            if (groupId.HasValue)
+                filter &= filterBuilder.Eq(p => p.GroupId, groupId.Value.ToString());
 
-            // Sortowanie
-            var sort = ascending
-                ? Builders<Product>.Sort.Ascending(sortBy)
-                : Builders<Product>.Sort.Descending(sortBy);
+            
+            var sortDefinition = sortOrder switch
+            {
+                SortOrder.NameDescending => Builders<Product>.Sort.Descending(p => p.Name),
+                SortOrder.PriceAscending => Builders<Product>.Sort.Ascending(p => p.Price),
+                SortOrder.PriceDescending => Builders<Product>.Sort.Descending(p => p.Price),
+                _ => Builders<Product>.Sort.Ascending(p => p.Name) 
+            };
 
-            // Pobieranie danych
-            var products = _products.Find(filter).Sort(sort).ToList();
+            
+            var products = await _products.Find(filter)
+                .Sort(sortDefinition)
+                .ToListAsync();
+
             var groupIds = products.Select(p => p.GroupId).Distinct().ToList();
-            var groups = _groups.Find(g => groupIds.Contains(g.Id)).ToList().ToDictionary(g => g.Id);
+            var groups = await _groups.Find(g => groupIds.Contains(g.Id))
+                .ToListAsync();
 
-            // Mapowanie
+            var groupDict = groups.ToDictionary(g => g.Id);
+
+            
             return products.Select(p => new ProductResponseDTO
             {
                 Id = int.Parse(p.Id),
                 Name = p.Name,
-                Price = p.Price,
-                GroupId = int.Parse(p.GroupId),
-                GroupName = groups.TryGetValue(p.GroupId, out var group) ? group.Name : "Unknown",
+                Price = (double)p.Price,
+                GroupName = groupDict.TryGetValue(p.GroupId, out var group) ? group.Name : "Unknown",
                 IsActive = p.IsActive
             });
         }
 
-        public void AddProduct(ProductRequestDTO productDto)
+        public async Task<ProductResponseDTO> AddProductAsync(ProductRequestDTO productRequest)
         {
             var product = new Product
             {
-                Name = productDto.Name,
-                Price = productDto.Price,
-                GroupId = productDto.GroupId.ToString(),
+                Name = productRequest.Name,
+                Price = (decimal)productRequest.Price,
+                GroupId = productRequest.GroupId.ToString(),
                 IsActive = true
             };
-            _products.InsertOne(product);
+
+            await _products.InsertOneAsync(product);
+
+            return new ProductResponseDTO
+            {
+                Id = int.Parse(product.Id),
+                Name = product.Name,
+                Price = (double)product.Price,
+                IsActive = true
+            };
         }
 
-        public void DeactivateProduct(int productId)
+        public async Task DeactivateProductAsync(int productId)
         {
             var filter = Builders<Product>.Filter.Eq(p => p.Id, productId.ToString());
             var update = Builders<Product>.Update.Set(p => p.IsActive, false);
-            _products.UpdateOne(filter, update);
+            await _products.UpdateOneAsync(filter, update);
         }
 
-        public void ActivateProduct(int productId)
+        public async Task ActivateProductAsync(int productId)
         {
             var filter = Builders<Product>.Filter.Eq(p => p.Id, productId.ToString());
             var update = Builders<Product>.Update.Set(p => p.IsActive, true);
-            _products.UpdateOne(filter, update);
+            await _products.UpdateOneAsync(filter, update);
+        }
+
+        public async Task DeleteProductAsync(int productId)
+        {
+            await _products.DeleteOneAsync(p => p.Id == productId.ToString());
         }
     }
 }

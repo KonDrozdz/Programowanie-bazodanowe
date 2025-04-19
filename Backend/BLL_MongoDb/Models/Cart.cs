@@ -1,12 +1,26 @@
-﻿using System;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLL_MongoDb
+namespace BLL_MongoDb.Models
 {
-    class Cart
+    public class Cart
     {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; set; }
+
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string UserId { get; set; } 
+
+        public List<CartItem> Items { get; set; } = new List<CartItem>();
+    }
+
+    public class CartItem
+    {
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string ProductId { get; set; } 
+
+        public int Amount { get; set; } 
     }
 }

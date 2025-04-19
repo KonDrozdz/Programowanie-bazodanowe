@@ -25,7 +25,7 @@ namespace BLL_MongoDb.Services
 
         public void Logout(int userId)
         {
-            // Implementacja zależna od mechanizmu tokenów
+            
         }
 
         public void AddUser(UserRequestDTO userDto)
